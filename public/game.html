@@ -7,10 +7,23 @@
 </head>
 <body>
     <h1>Welcome to the Game Page!</h1>
+    <h2>Players:</h2>
+    <ul id="loggedInUsers"></ul>
     <!-- Add game content here -->
     <button id="leaveBtn">Leave</button>
 
     <script>
+        fetch('/loggedInUsers')
+        .then(response => response.json())
+        .then(data => {
+            const loggedInUsersList = document.getElementById('loggedInUsers');
+            data.forEach(user => {
+                const listItem = document.createElement('li');
+                listItem.textContent = user.displayName;
+                loggedInUsersList.appendChild(listItem);
+            });
+        });
+
         document.getElementById('leaveBtn').addEventListener('click', function() {
             fetch('/logout')
             .then(response => {

@@ -56,3 +56,10 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+// Route to get the list of logged-in users
+app.get('/loggedInUsers', (req, res) => {
+    const loggedInUsers = req.session.displayName ? [{ displayName: req.session.displayName }] : [];
+    res.json(loggedInUsers);
+});
+
