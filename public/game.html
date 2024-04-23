@@ -4,24 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Page</title>
+    <style>
+        #container {
+            display: flex;
+            align-items: flex-start;
+        }
+        #drawingCanvas {
+            border: 1px solid #000;
+            margin-right: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .controls > * {
+            margin-right: 10px;
+        }
+        #leaveBtn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+        }
+        #eraserBtn.active {
+            background-color: gold;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to the Game Page!</h1>
-    <h2>Players:</h2>
-    <ul id="loggedInUsers"></ul>
-    <!-- Add game content here -->
+    <div id="container">
+        <canvas id="drawingCanvas" width="800" height="400"></canvas>
+        <div>
+            <h2>Logged-in Users:</h2>
+            <table id="loggedInUsersTable">
+                <tr>
+                    <th>Display Name</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="controls">
+        <label for="colorSelect">Color:</label>
+        <select id="colorSelect">
+            <option value="black">Black</option>
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+            <option value="blue">Blue</option>
+        </select>
+        <label for="thicknessSelect">Thickness:</label>
+        <select id="thicknessSelect">
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="5">5</option>
+            <option value="8">8</option>
+        </select>
+        <button id="eraserBtn">Eraser</button>
+        <button id="clearBtn">Clear Canvas</button>
+    </div>
     <button id="leaveBtn">Leave</button>
 
     <script>
         fetch('/loggedInUsers')
         .then(response => response.json())
         .then(data => {
-            const loggedInUsersList = document.getElementById('loggedInUsers');
+            const loggedInUsersTable = document.getElementById('loggedInUsersTable');
             data.forEach(user => {
-                const listItem = document.createElement('li');
-                listItem.textContent = user.displayName;
-                loggedInUsersList.appendChild(listItem);
+                const row = loggedInUsersTable.insertRow(-1);
+                const cell = row.insertCell(0);
+                cell.textContent = user.displayName;
             });
+        });
+
+        const canvas = document.getElementById('drawingCanvas');
+        const context = canvas.getContext('2d');
+
+        let isDrawing = false;
+        let currentColor = 'black';
+        let currentThickness = 1;
+        let isErasing = false;
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function endDrawing() {
+            isDrawing = false;
+            context.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const x = e.clientX - canvas.offsetLeft;
+            const y = e.clientY - canvas.offsetTop;
+
+            context.lineWidth = isErasing ? 4 : currentThickness;
+            context.lineCap = 'round';
+            context.strokeStyle = isErasing ? 'white' : currentColor;
+
+            context.lineTo(x, y);
+            context.stroke();
+            context.beginPath();
+            context.moveTo(x, y);
+        }
+
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDrawing);
+        canvas.addEventListener('mouseout', endDrawing);
+
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
         });
 
         document.getElementById('leaveBtn').addEventListener('click', function() {
@@ -31,6 +138,24 @@
                     window.location.href = response.url;
                 }
             });
+        });
+
+        document.getElementById('colorSelect').addEventListener('change', function(e) {
+            currentColor = e.target.value;
+        });
+
+        document.getElementById('thicknessSelect').addEventListener('change', function(e) {
+            currentThickness = parseInt(e.target.value);
+        });
+
+        document.getElementById('eraserBtn').addEventListener('click', function() {
+            isErasing = !isErasing;
+            document.getElementById('eraserBtn').classList.toggle('active', isErasing);
+            if (isErasing) {
+                document.getElementById('thicknessSelect').value = '4'; // Set thickness to 4 for eraser
+            } else {
+                document.getElementById('thicknessSelect').value = '1'; // Reset thickness to default when not erasing
+            }
         });
     </script>
 </body>
