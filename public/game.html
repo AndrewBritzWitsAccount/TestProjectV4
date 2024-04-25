@@ -76,17 +76,9 @@
     </div>
     <button id="leaveBtn">Leave</button>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        fetch('/loggedInUsers')
-        .then(response => response.json())
-        .then(data => {
-            const loggedInUsersTable = document.getElementById('loggedInUsersTable');
-            data.forEach(user => {
-                const row = loggedInUsersTable.insertRow(-1);
-                const cell = row.insertCell(0);
-                cell.textContent = user.displayName;
-            });
-        });
+        const socket = io();
 
         const canvas = document.getElementById('drawingCanvas');
         const context = canvas.getContext('2d');
@@ -120,6 +112,9 @@
             context.stroke();
             context.beginPath();
             context.moveTo(x, y);
+
+            // Emit drawing data to the server
+            socket.emit('draw', { x, y, color: context.strokeStyle, thickness: context.lineWidth });
         }
 
         canvas.addEventListener('mousedown', startDrawing);
@@ -157,6 +152,24 @@
                 document.getElementById('thicknessSelect').value = '1'; // Reset thickness to default when not erasing
             }
         });
+
+        // Update the list of logged-in users
+        function updateLoggedInUsers() {
+            fetch('/loggedInUsers')
+            .then(response => response.json())
+            .then(data => {
+                const loggedInUsersTable = document.getElementById('loggedInUsersTable');
+                loggedInUsersTable.innerHTML = ''; // Clear the table
+                data.forEach(user => {
+                    const row = loggedInUsersTable.insertRow(-1);
+                    const cell = row.insertCell(0);
+                    cell.textContent = user.displayName;
+                });
+            });
+        }
+
+        // Periodically update the list of logged-in users
+        setInterval(updateLoggedInUsers, 3000); // Update every 3 seconds
     </script>
 </body>
 </html>

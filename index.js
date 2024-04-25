@@ -1,8 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const http = require('http');
+const socketIo = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server);
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -51,9 +55,24 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
+// WebSocket connection handling
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    // Handle drawing events
+    socket.on('draw', (data) => {
+        // Broadcast drawing data to all clients
+        io.emit('draw', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
 // Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
@@ -62,4 +81,3 @@ app.get('/loggedInUsers', (req, res) => {
     const loggedInUsers = req.session.displayName ? [{ displayName: req.session.displayName }] : [];
     res.json(loggedInUsers);
 });
-
