@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 50%;
+            margin: 0 auto;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to the Lobby</h1>
+    <table id="playersTable">
+        <thead>
+            <tr>
+                <th>Player Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Player rows will be inserted here dynamically -->
+        </tbody>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = io();
+
+            // Function to update the player list
+            function updatePlayerList(players) {
+                const tableBody = document.querySelector('#playersTable tbody');
+                tableBody.innerHTML = ''; // Clear previous content
+                players.forEach(player => {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.textContent = player.displayName;
+                    row.appendChild(cell);
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Get initial list of logged-in users
+            fetch('/loggedInUsers')
+                .then(response => response.json())
+                .then(players => {
+                    updatePlayerList(players);
+                });
+
+            // Listen for updates to the player list
+            socket.on('playerListUpdate', players => {
+                updatePlayerList(players);
+            });
+        });
+    </script>
+</body>
+
+</html>

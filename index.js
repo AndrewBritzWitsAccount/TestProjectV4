@@ -27,6 +27,9 @@ const requireLogin = (req, res, next) => {
     next();
 };
 
+// Keep track of logged-in users
+let loggedInUsers = [];
+
 // Routes
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/public/loginPage.html');
@@ -37,20 +40,27 @@ app.post('/login', (req, res) => {
     if (password === 'brokenTelephone') {
         // Here you can handle the display name as needed, for example, you can store it in a session
         req.session.displayName = displayName;
-        // Redirect to the main game page
-        res.redirect('/game');
+        loggedInUsers.push({ displayName: displayName });
+        io.emit('playerListUpdate', loggedInUsers);
+        // Redirect to the lobby page
+        res.redirect('/lobby');
     } else {
         res.send('Incorrect password. Please try again.');
     }
 });
 
-// Route to serve the game page with authentication middleware
-app.get('/game', requireLogin, (req, res) => {
-    res.sendFile(__dirname + '/public/game.html');
+// Route to serve the lobby page with authentication middleware
+app.get('/lobby', requireLogin, (req, res) => {
+    res.sendFile(__dirname + '/public/lobby.html');
 });
 
 // Route to log out the user
 app.get('/logout', (req, res) => {
+    const index = loggedInUsers.findIndex(user => user.displayName === req.session.displayName);
+    if (index !== -1) {
+        loggedInUsers.splice(index, 1);
+        io.emit('playerListUpdate', loggedInUsers);
+    }
     req.session.destroy();
     res.redirect('/');
 });
@@ -58,12 +68,6 @@ app.get('/logout', (req, res) => {
 // WebSocket connection handling
 io.on('connection', (socket) => {
     console.log('A user connected');
-
-    // Handle drawing events
-    socket.on('draw', (data) => {
-        // Broadcast drawing data to all clients
-        io.emit('draw', data);
-    });
 
     socket.on('disconnect', () => {
         console.log('User disconnected');
@@ -78,6 +82,5 @@ server.listen(PORT, () => {
 
 // Route to get the list of logged-in users
 app.get('/loggedInUsers', (req, res) => {
-    const loggedInUsers = req.session.displayName ? [{ displayName: req.session.displayName }] : [];
     res.json(loggedInUsers);
 });
