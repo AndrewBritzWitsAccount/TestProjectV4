@@ -38,7 +38,7 @@ app.post('/login', (req, res) => {
         // Here you can handle the display name as needed, for example, you can store it in a session
         req.session.displayName = displayName;
         // Redirect to the main game page
-        res.redirect('/game');
+        return res.redirect('/game'); // Change res.redirect to return res.redirect
     } else {
         res.send('Incorrect password. Please try again.');
     }
@@ -81,3 +81,5 @@ app.get('/loggedInUsers', (req, res) => {
     const loggedInUsers = req.session.displayName ? [{ displayName: req.session.displayName }] : [];
     res.json(loggedInUsers);
 });
+
+module.exports = app; // Exporting the app object
